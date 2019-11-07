@@ -16,6 +16,7 @@ setup(
     entry_points={
         'console_scripts': [
             'download_annotation=guess_loi_prep.commands.annotation:main',
+            'filter_gtf=guess_loi_prep.filter_gtf:filter_gtf'
         ],
     }
 )
