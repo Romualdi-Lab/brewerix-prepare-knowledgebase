@@ -12,11 +12,13 @@ setup(
     description="Tools to prepare data for Guess-LOI",
     packages=find_packages(),
     install_requires=[
+        "pysam"
     ],
     entry_points={
         'console_scripts': [
             'download_annotation=guess_loi_prep.commands.annotation:main',
-            'filter_gtf=guess_loi_prep.filter_gtf:filter_gtf'
+            'filter_gtf=guess_loi_prep.filter_gtf:filter_gtf',
+            'split_variants=guess_loi_prep.variant_selection:create_vcf_for_brew_loi'
         ],
     }
 )
