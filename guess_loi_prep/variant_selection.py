@@ -6,7 +6,7 @@ from pysam.libcbcf import VariantRecord
 
 def create_vcf_for_brew_loi():
     parser = argparse.ArgumentParser(description="""
-            Select variants from a Gzipped ENSEMBL CVF file.
+            Select variants from a Gzipped ENSEMBL VCF file.
             Exclude sites with Reference allele not present in the reference.
             Marks multi allelic sites and SNV that share the same position (the second is marked).
             
@@ -66,7 +66,7 @@ def format_item_list(items):
     item_string = []
     for i in items:
         key, value = i
-        if value:
+        if value is True:
             item_string.append(key)
         else:
             item_string.append(key + '=' + value)

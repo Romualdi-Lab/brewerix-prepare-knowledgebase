@@ -17,7 +17,10 @@ setup(
     entry_points={
         'console_scripts': [
             'download_annotation=guess_loi_prep.commands.annotation:main',
+            'download_genome=guess_loi_prep.download_genome:main',
+            'download_chromosome_variants=guess_loi_prep.download_variants:main',
             'filter_gtf=guess_loi_prep.filter_gtf:filter_gtf',
+            'filter_vcfs=guess_loi_prep.filter_vcf:filter_vcfs',
             'split_variants=guess_loi_prep.variant_selection:create_vcf_for_brew_loi'
         ],
     }

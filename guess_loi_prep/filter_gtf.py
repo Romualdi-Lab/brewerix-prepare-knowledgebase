@@ -16,31 +16,43 @@ def filter_gtf():
 
     parser.add_argument('genes', help="Imprinted genes file name")
     parser.add_argument('gtf', help="Gzipped GTF")
-
     args = parser.parse_args()
-    filtered_gtf = filter_gft_by_imprinted_genes(args.genes, args.gtf)
 
-    for key, values in groupby(sort_by_columns(filtered_gtf, [0, 3, 1]), itemgetter(0, 3)):
-        entries = list(values)
+    filter_gtf_by_genes(args.genes, args.gtf, "igenes_and_xgenes.bed")
 
-        if len(entries) == 1:
-            print('\t'.join([str(x) for x in entries[0]]))
-        else:
-            union = entries.pop(0)
-            chrom, start, stop, gene = union[:4]
-            annotation = union[4:]
-            genomic_range = set(range(start, stop))
 
-            for entry in entries:
-                gr = set(range(entry[1], entry[2]))
-                if not genomic_range.intersection(gr):
-                    print('\t'.join([chrom, str(min(genomic_range)), str(max(genomic_range)), gene] + annotation))
-                    genomic_range = gr
-                else:
-                    genomic_range = genomic_range.union(gr)
+def filter_gtf_by_genes(genes, gtf, output):
+    filtered_gtf = filter_gft_by_imprinted_genes(genes, gtf)
+    with open(output, "wt") as out:
+        for key, values in groupby(sort_by_columns(filtered_gtf, [0, 3, 1]), itemgetter(0, 3)):
+            entries = list(values)
 
-            # print('\t'.join([str(x) for x in entry]))
-            print('\t'.join([chrom, str(min(genomic_range)), str(max(genomic_range)), gene] + annotation))
+            outlines = collapse_overlapping_bed(entries)
+            out.write(outlines + "\n")
+
+
+def collapse_overlapping_bed(entries):
+    out = []
+    if len(entries) == 1:
+        out.append('\t'.join([str(x) for x in entries[0]]))
+
+    else:
+        union = entries.pop(0)
+        chrom, start, stop, gene = union[:4]
+        annotation = union[4:]
+        genomic_range = set(range(start, stop))
+
+        for entry in entries:
+            gr = set(range(entry[1], entry[2]))
+            if not genomic_range.intersection(gr):
+                out.append('\t'.join([chrom, str(min(genomic_range)), str(max(genomic_range)), gene] + annotation))
+                genomic_range = gr
+            else:
+                genomic_range = genomic_range.union(gr)
+
+        out.append('\t'.join([chrom, str(min(genomic_range)), str(max(genomic_range)), gene] + annotation))
+
+    return '\n'.join(out)
 
 
 def filter_gft_by_imprinted_genes(igenes_file: str, gtf_file: str, keep_chrs=None) -> List:
