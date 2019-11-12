@@ -16,6 +16,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
+            'build_knowledgebase=guess_loi_prep.build_knowledgebase:main',
             'download_annotation=guess_loi_prep.commands.annotation:main',
             'download_genome=guess_loi_prep.download_genome:main',
             'download_chromosome_variants=guess_loi_prep.download_variants:main',

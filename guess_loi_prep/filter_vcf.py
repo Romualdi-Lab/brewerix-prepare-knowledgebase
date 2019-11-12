@@ -1,4 +1,5 @@
 import argparse
+from os.path import join
 from subprocess import check_call
 
 from guess_loi_prep.general import read_chromosomes
@@ -34,15 +35,17 @@ def filter_vcfs():
     filter_chromosome_vcfs(chromosomes, args.bed_file, args.output_file)
 
 
-def filter_chromosome_vcfs(chromosomes, bed_file, filename):
-    with open (filename, "wt") as fd:
+def filter_chromosome_vcfs(chromosomes, bed_file, filename, directory=None):
+    directory = directory if directory else '.'
+
+    with open(filename, "wt") as fd:
         fixed_parameters = ["bedtools", "intersect", "-u", "-wa"]
         for count, chrom in enumerate(chromosomes):
-            filename = chrom + '.vcf.gz'
+            filename = join(directory, chrom + '.vcf.gz')
 
             if count == 0:
-                cmd = fixed_parameters + ['-header'] + ["-a", filename,"-b", bed_file]
+                cmd = fixed_parameters + ['-header'] + ["-a", filename, "-b", bed_file]
             else:
-                cmd = fixed_parameters + ["-a", filename,"-b", bed_file]
+                cmd = fixed_parameters + ["-a", filename, "-b", bed_file]
 
             check_call(cmd, stdout=fd)

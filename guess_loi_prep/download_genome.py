@@ -1,20 +1,23 @@
 from argparse import ArgumentParser
 
-from guess_loi_prep.commands.annotation import species_name
 from guess_loi_prep.download import DownloadError, download_and_unpack
-from guess_loi_prep.general import read_chromosomes
+from guess_loi_prep.general import read_chromosomes, species_name, check_file_exists
 
 
 def main():
     args = parse_args()
     chromosomes = read_chromosomes(args.chromosomes)
+    download_genome(args.species, args.ensembl_version, chromosomes)
 
-    with open("genome.fa", "wt") as fd:
-        for chrom in chromosomes:
-            try:
-                download_chromosome(chrom, args.species, fd, args.ensembl_version)
-            except DownloadError as e:
-                exit(str(e))
+
+def download_genome(species, ensembl_version, chromosomes):
+    if not check_file_exists("genome.fa"):
+        with open("genome.fa", "wt") as fd:
+            for chrom in chromosomes:
+                try:
+                    download_chromosome(chrom, species, fd, ensembl_version)
+                except DownloadError as e:
+                    exit(str(e))
 
 
 def download_chromosome(chrom, species, fd, ensembl_version=None):

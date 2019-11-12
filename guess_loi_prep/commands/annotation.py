@@ -1,8 +1,8 @@
-import re
-from argparse import ArgumentParser, ArgumentTypeError
+from argparse import ArgumentParser
 
 from guess_loi_prep.annotation import download_annotation
 from guess_loi_prep.download import DownloadError
+from guess_loi_prep.general import species_name
 
 
 def main():
@@ -18,13 +18,6 @@ def parse_args():
     parser.add_argument('species', type=species_name, help='the species')
     parser.add_argument('-e', '--ensembl-version', type=int, help='the ENSEMBL annotation version')
     return parser.parse_args()
-
-
-def species_name(string):
-    if re.match(r'^[a-z]+_[a-z]+$', string) is None:
-        msg = "%r is not a valid species name (ex homo_sapiens)" % string
-        raise ArgumentTypeError(msg)
-    return string
 
 
 if __name__ == "__main__":

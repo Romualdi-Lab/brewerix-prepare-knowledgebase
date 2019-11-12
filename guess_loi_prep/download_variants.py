@@ -1,24 +1,31 @@
 from argparse import ArgumentParser
+from os.path import join
 
-from guess_loi_prep.commands.annotation import species_name
 from guess_loi_prep.download import download, DownloadError
-from guess_loi_prep.general import read_chromosomes
+from guess_loi_prep.general import read_chromosomes, species_name, check_file_exists
 
 
 def main():
     args = parse_args()
     chromosomes = read_chromosomes(args.chromosomes)
+    download_variants(args.species, args.ensembl_version, chromosomes)
+
+
+def download_variants(species, ensembl_version, chromosomes, directory=None):
+    directory = directory if directory else '.'
     for chrom in chromosomes:
-        try:
-            download_chromosome_variants(chrom, args.species, args.ensembl_version)
-        except DownloadError as e:
-            exit(str(e))
+        if not check_file_exists(join(directory, chrom + '.vcf.gz')):
+            try:
+                download_chromosome_variants(chrom, species, ensembl_version, directory)
+            except DownloadError as e:
+                exit(str(e))
 
 
-def download_chromosome_variants(chrom, species, ensembl_version=None):
+def download_chromosome_variants(chrom, species, ensembl_version=None, directory=None):
     release = "release-%s/gtf" % ensembl_version if ensembl_version else "current_variation"
+    directory = directory if directory else '.'
     url = "ftp://ftp.ensembl.org/pub/%s/vcf/%s/%s-chr%s.vcf.gz" % (release, species, species, chrom)
-    download(url, chrom + '.vcf.gz')
+    download(url, join(directory, chrom + '.vcf.gz'))
 
 
 def parse_args():
