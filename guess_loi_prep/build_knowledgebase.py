@@ -1,8 +1,11 @@
 from argparse import ArgumentParser
 from os import makedirs
+from subprocess import check_call
 
 from guess_loi_prep.annotation import download_annotation
+from guess_loi_prep.download_genome import download_genome
 from guess_loi_prep.download_variants import download_variants
+from guess_loi_prep.filter_gtf import filter_gtf_by_genes
 from guess_loi_prep.filter_vcf import filter_chromosome_vcfs
 from guess_loi_prep.general import read_chromosomes, species_name, check_file_exists
 from guess_loi_prep.variant_selection import split_variants_to_files
@@ -16,24 +19,30 @@ def main():
         download_annotation(args.species, args.ensembl_version)
 
     bed_file = "igenes_and_xgenes.bed"
-    # filter_gtf_by_genes(args.imprinted_genes, gtf_gz, bed_file)
-
-    # download_genome(args.species, args.ensembl_version, chromosomes)
+    if not check_file_exists(bed_file):
+        filter_gtf_by_genes(args.imprinted_genes, gtf_gz, bed_file)
 
     genome_file = "genome.fa"
+    genome_dict = "genome.dict"
+    download_genome(args.species, args.ensembl_version, chromosomes)
+    check_call('gatk CreateSequenceDictionary -R=' + genome_file + ' -O=' + genome_dict, shell=True)
+    check_call('samtools faidx ' + genome_file, shell=True)
+
     var_dir = "ensembl_variants"
     variants_file = args.species + '_brew.vcf'
-
     makedirs(var_dir, exist_ok=True)
     download_variants(args.species, args.ensembl_version, chromosomes, var_dir)
+
     if not check_file_exists(variants_file):
         filter_chromosome_vcfs(chromosomes, bed_file, variants_file, var_dir)
 
-    split_variants_to_files(variants_file, genome_file, 'snps-biallelic.vcf', 'snps-multiallelic.vcf')
+    bi_vcf = 'snps-biallelic.vcf'
+    multi_vcf = 'snps-multiallelic.vcf'
 
-    # gatk IndexFeatureFile -F
-    # CreateSequenceDictionary R=genome-nrm.fa O=genome-nrm.dict
-    # samtools faidx genome-nrm.fa
+    if not check_file_exists(bi_vcf) and check_file_exists(multi_vcf):
+        split_variants_to_files(variants_file, genome_file, bi_vcf, multi_vcf)
+        check_call('gatk IndexFeatureFile -F ' + bi_vcf, shell=True)
+        check_call('gatk IndexFeatureFile -F ' + multi_vcf, shell=True)
 
 
 def parse_args():
