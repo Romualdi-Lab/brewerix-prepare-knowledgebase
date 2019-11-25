@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="guess-loi-prepare",
-    version="0.1.0",
+    version="0.1.1",
     author="Romualdi's Lab",
     author_email=[
         "paolo.cavei@gmail.com",

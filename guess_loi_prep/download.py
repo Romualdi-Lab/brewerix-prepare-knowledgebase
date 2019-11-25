@@ -6,7 +6,7 @@ from subprocess import check_call, CalledProcessError
 
 def download(url, filename):
     try:
-        check_call(['wget', '-O', filename , url])
+        check_call(['wget', '-c', '-O', filename, url])
     except CalledProcessError:
         try_unlink(filename)
         raise DownloadError("Failed download of: " + url)

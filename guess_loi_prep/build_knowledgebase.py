@@ -1,13 +1,15 @@
 from argparse import ArgumentParser
 from os import makedirs
+from os.path import join
 from subprocess import check_call
 
 from guess_loi_prep.annotation import download_annotation
 from guess_loi_prep.download_genome import download_genome
 from guess_loi_prep.download_variants import download_variants
 from guess_loi_prep.filter_gtf import filter_gtf_by_genes
-from guess_loi_prep.filter_vcf import filter_chromosome_vcfs
-from guess_loi_prep.general import read_chromosomes, species_name, check_file_exists
+from guess_loi_prep.filter_vcf import filter_chromosome_vcfs, filter_global_vcf
+from guess_loi_prep.general import read_chromosomes, species_name, check_file_exists, check_command_availability
+from guess_loi_prep.hisat_index import create_hisat_index
 from guess_loi_prep.variant_selection import split_variants_to_files
 
 
@@ -25,24 +27,57 @@ def main():
     genome_file = "genome.fa"
     genome_dict = "genome.dict"
     download_genome(args.species, args.ensembl_version, chromosomes)
-    check_call('gatk CreateSequenceDictionary -R=' + genome_file + ' -O=' + genome_dict, shell=True)
-    check_call('samtools faidx ' + genome_file, shell=True)
+
+    if not check_file_exists(genome_dict):
+        check_call('gatk CreateSequenceDictionary -R=' + genome_file + ' -O=' + genome_dict, shell=True)
+
+    if not check_file_exists(genome_file + '.fai'):
+        check_call('samtools faidx ' + genome_file, shell=True)
 
     var_dir = "ensembl_variants"
     variants_file = args.species + '_brew.vcf'
     makedirs(var_dir, exist_ok=True)
+
     download_variants(args.species, args.ensembl_version, chromosomes, var_dir)
 
     if not check_file_exists(variants_file):
-        filter_chromosome_vcfs(chromosomes, bed_file, variants_file, var_dir)
+        if args.species != "homo_sapiens":
+            filter_global_vcf("global.vcf.gz", bed_file, variants_file, var_dir)
+        else:
+            filter_chromosome_vcfs(chromosomes, bed_file, variants_file, var_dir)
 
     bi_vcf = 'snps-biallelic.vcf'
     multi_vcf = 'snps-multiallelic.vcf'
+    i_bi_vcf = 'i_snps-biallelic.vcf'
+    i_multi_vcf = 'i_snps-multiallelic.vcf'
 
-    if not check_file_exists(bi_vcf) and check_file_exists(multi_vcf):
-        split_variants_to_files(variants_file, genome_file, bi_vcf, multi_vcf)
-        check_call('gatk IndexFeatureFile -F ' + bi_vcf, shell=True)
-        check_call('gatk IndexFeatureFile -F ' + multi_vcf, shell=True)
+    if not check_file_exists(bi_vcf) and not check_file_exists(multi_vcf):
+        if not check_file_exists(i_bi_vcf) and not check_file_exists(i_multi_vcf):
+            split_variants_to_files(variants_file, genome_file, i_bi_vcf, i_multi_vcf)
+        update_vcf_seq_dict(i_bi_vcf, bi_vcf, genome_dict)
+        gatk_index(bi_vcf)
+        update_vcf_seq_dict(i_multi_vcf, multi_vcf, genome_dict)
+        gatk_index(multi_vcf)
+
+    wdir = "hisat2-index"
+    makedirs(wdir, exist_ok=True)
+
+    if not check_file_exists(join(wdir, 'genome.1.ht2')):
+        create_hisat_index(genome_file, join(wdir, args.index_prefix), str(args.threads))
+
+
+def update_vcf_seq_dict(in_vcf, output, genome_dict):
+    check_command_availability(['gatk'])
+    check_call(['gatk',
+                'UpdateVCFSequenceDictionary',
+                '--source-dictionary', genome_dict,
+                '-V', in_vcf,
+                '-O', output])
+
+
+def gatk_index(vcf):
+    check_command_availability(['gatk'])
+    check_call('gatk IndexFeatureFile -F ' + vcf, shell=True)
 
 
 def parse_args():
@@ -51,6 +86,8 @@ def parse_args():
     parser.add_argument('chromosomes', help='a file with chromosomes to download')
     parser.add_argument('imprinted_genes', help='a file with the imprinted genes')
     parser.add_argument('-e', '--ensembl-version', type=int, help='the ENSEMBL annotation version')
+    parser.add_argument('-i', '--index-prefix', help='hisat2-build index prefix', default="genome")
+    parser.add_argument('-t', '--threads', help='hisat2-build number of threads', type=int, default=1)
     return parser.parse_args()
 
 

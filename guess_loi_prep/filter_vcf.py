@@ -12,12 +12,11 @@ def filter_vcf():
 
     parser.add_argument('vcf_file_gz', help="a Gzipped VCF file from ENSEMBL")
     parser.add_argument('bed_file', help="a bed file")
+    parser.add_argument('output_file', help="an output vcf file")
 
     args = parser.parse_args()
 
-    check_call(["bedtools", "intersect", "-u", "-wa", "-header",
-                "-a", args.vcf_file_gz,
-                "-b", args.bed_file])
+    filter_global_vcf(args.vcf_file_gz, args.bed_file, args.output)
 
 
 def filter_vcfs():
@@ -41,11 +40,21 @@ def filter_chromosome_vcfs(chromosomes, bed_file, filename, directory=None):
     with open(filename, "wt") as fd:
         fixed_parameters = ["bedtools", "intersect", "-u", "-wa"]
         for count, chrom in enumerate(chromosomes):
-            filename = join(directory, chrom + '.vcf.gz')
+            local_vcf = join(directory, chrom + '.vcf.gz')
 
             if count == 0:
-                cmd = fixed_parameters + ['-header'] + ["-a", filename, "-b", bed_file]
+                cmd = fixed_parameters + ['-header'] + ["-a", local_vcf, "-b", bed_file]
             else:
-                cmd = fixed_parameters + ["-a", filename, "-b", bed_file]
+                cmd = fixed_parameters + ["-a", local_vcf, "-b", bed_file]
 
             check_call(cmd, stdout=fd)
+
+
+def filter_global_vcf(vcf_file_gz, bed_file, filename, directory=None):
+    directory = directory if directory else '.'
+    local_vcf = join(directory, vcf_file_gz)
+
+    with open(filename, "wt") as fd:
+        check_call(["bedtools", "intersect", "-u", "-wa", "-header",
+                    "-a", local_vcf,
+                    "-b", bed_file], stdout=fd)

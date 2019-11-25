@@ -22,6 +22,7 @@ def filter_gtf():
 
 
 def filter_gtf_by_genes(genes, gtf, output):
+
     filtered_gtf = filter_gft_by_imprinted_genes(genes, gtf)
     with open(output, "wt") as out:
         for key, values in groupby(sort_by_columns(filtered_gtf, [0, 3, 1]), itemgetter(0, 3)):

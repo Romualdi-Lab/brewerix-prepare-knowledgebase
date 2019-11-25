@@ -13,12 +13,26 @@ def main():
 
 def download_variants(species, ensembl_version, chromosomes, directory=None):
     directory = directory if directory else '.'
-    for chrom in chromosomes:
-        if not check_file_exists(join(directory, chrom + '.vcf.gz')):
+    if species != "homo_sapiens":
+        if not check_file_exists(join(directory, 'global.vcf.gz')):
             try:
-                download_chromosome_variants(chrom, species, ensembl_version, directory)
+                download_global_variants(species, ensembl_version, directory)
             except DownloadError as e:
                 exit(str(e))
+    else:
+        for chrom in chromosomes:
+            if not check_file_exists(join(directory, chrom + '.vcf.gz')):
+                try:
+                    download_chromosome_variants(chrom, species, ensembl_version, directory)
+                except DownloadError as e:
+                    exit(str(e))
+
+
+def download_global_variants(species, ensembl_version=None, directory=None):
+    release = "release-%s/gtf" % ensembl_version if ensembl_version else "current_variation"
+    directory = directory if directory else '.'
+    url = "ftp://ftp.ensembl.org/pub/%s/vcf/%s/%s.vcf.gz" % (release, species, species)
+    download(url, join(directory, 'global.vcf.gz'))
 
 
 def download_chromosome_variants(chrom, species, ensembl_version=None, directory=None):
