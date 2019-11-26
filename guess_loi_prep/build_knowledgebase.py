@@ -1,9 +1,12 @@
 from argparse import ArgumentParser
 from os import makedirs
-from os.path import join
+from os.path import join, exists
 from subprocess import check_call
 
 from guess_loi_prep.annotation import download_annotation
+from guess_loi_prep.create_geneimprint_annotation import create_geneimprint_annotation_dict
+from guess_loi_prep.create_genetype_annotation import read_bed
+from guess_loi_prep.create_par_regions import create_par_regions
 from guess_loi_prep.download_genome import download_genome
 from guess_loi_prep.download_variants import download_variants
 from guess_loi_prep.filter_gtf import filter_gtf_by_genes
@@ -23,6 +26,17 @@ def main():
     bed_file = "igenes_and_xgenes.bed"
     if not check_file_exists(bed_file):
         filter_gtf_by_genes(args.imprinted_genes, gtf_gz, bed_file)
+
+    bed_annotated = "genes-and-sex-regions.bed"
+    if not check_file_exists(bed_annotated):
+        imprint_annotation_file = "gene_imprint.txt"
+        if not exists(imprint_annotation_file):
+            exit("Annotation file for imprinted genes not provided")
+
+        gene2info = create_geneimprint_annotation_dict(imprint_annotation_file)
+        # gene2type = create_genetype_annotation_dict(bed_file)
+        par_chroms = create_par_regions("homo_sapiens-par.bed")
+        annotate_bed(bed_file, bed_annotated, gene2info, par_chroms)
 
     genome_file = "genome.fa"
     genome_dict = "genome.dict"
@@ -78,6 +92,23 @@ def update_vcf_seq_dict(in_vcf, output, genome_dict):
 def gatk_index(vcf):
     check_command_availability(['gatk'])
     check_call('gatk IndexFeatureFile -F ' + vcf, shell=True)
+
+
+def annotate_bed(bed_file, output, gene2info, par=None):
+    with open(output, 'wt') as out:
+        with open(bed_file, "rt") as fd:
+            for line in read_bed(fd):
+                outline = line
+                chrom, start, end = line[:3]
+                gene = line[3]
+                if gene in gene2info:
+                    outline.append(gene2info[gene])
+                if par is not None and chrom in par:
+                    value = ','.join([i.data for i in par[chrom][end]])
+                    if value != '':
+                        value = ';' + value
+                        outline[5] += value
+                out.write('\t'.join(outline) + "\n")
 
 
 def parse_args():

@@ -12,7 +12,8 @@ setup(
     description="Tools to prepare data for Guess-LOI",
     packages=find_packages(),
     install_requires=[
-        "pysam"
+        "pysam",
+        "intervaltree"
     ],
     entry_points={
         'console_scripts': [
@@ -22,7 +23,9 @@ setup(
             'download_chromosome_variants=guess_loi_prep.download_variants:main',
             'filter_gtf=guess_loi_prep.filter_gtf:filter_gtf',
             'filter_vcfs=guess_loi_prep.filter_vcf:filter_vcfs',
-            'split_variants=guess_loi_prep.variant_selection:create_vcf_for_brew_loi'
+            'split_variants=guess_loi_prep.variant_selection:create_vcf_for_brew_loi',
+            'create_geneimprint_annotation=guess_loi_prep.create_geneimprint_annotation:create_geneimprint_annotation',
+            'create_genetype_annotation=guess_loi_prep.create_genetype_annotation:create_genetype_annotation'
         ],
     }
 )
