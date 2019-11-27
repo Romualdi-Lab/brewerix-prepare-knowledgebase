@@ -12,7 +12,9 @@ def create_par_regions(bed_file):
             tree = IntervalTree()
 
             for entry in entries:
-                start, stop, gene = entry[1:4]
+                start = int(entry[1])
+                stop = int(entry[2])
+                gene = entry[3]
                 tree[start:stop] = gene
 
             chroms[chromosome] = tree

@@ -18,7 +18,7 @@ def create_genetype_annotation_dict(bed):
     with open(bed, 'rt') as fd:
         for _, _, _, key, _, type in read_bed(fd):
             if key not in dict:
-                dict[key] = set([type])
+                dict[key] = {type}
             else:
                 dict[key].add(type)
         return dict
@@ -27,7 +27,6 @@ def create_genetype_annotation_dict(bed):
 def read_bed(fd):
     for line in fd:
         tokens = line.rstrip('\n').split('\t')
-        print(tokens)
         if len(tokens) < 6:
             exit("annotation: Malformed input")
         yield tokens

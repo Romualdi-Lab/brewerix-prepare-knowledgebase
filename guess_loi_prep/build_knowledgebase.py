@@ -35,7 +35,7 @@ def main():
 
         gene2info = create_geneimprint_annotation_dict(imprint_annotation_file)
         # gene2type = create_genetype_annotation_dict(bed_file)
-        par_chroms = create_par_regions("homo_sapiens-par.bed")
+        par_chroms = create_par_regions(args.species + "-par.bed")
         annotate_bed(bed_file, bed_annotated, gene2info, par_chroms)
 
     genome_file = "genome.fa"
@@ -99,15 +99,17 @@ def annotate_bed(bed_file, output, gene2info, par=None):
         with open(bed_file, "rt") as fd:
             for line in read_bed(fd):
                 outline = line
-                chrom, start, end = line[:3]
-                gene = line[3]
+                chrom, start, end, gene = line[:4]
+
                 if gene in gene2info:
                     outline.append(gene2info[gene])
+
                 if par is not None and chrom in par:
-                    value = ','.join([i.data for i in par[chrom][end]])
+                    value = ','.join([i.data for i in par[chrom][int(end)]])
                     if value != '':
                         value = ';' + value
                         outline[5] += value
+
                 out.write('\t'.join(outline) + "\n")
 
 
