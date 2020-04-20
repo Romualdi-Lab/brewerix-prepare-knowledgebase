@@ -21,7 +21,7 @@ def download_genome(species, ensembl_version, chromosomes):
 
 
 def download_chromosome(chrom, species, fd, ensembl_version=None):
-    release = "release-%s/gtf" % ensembl_version if ensembl_version else "current_fasta"
+    release = "release-%s/fasta" % ensembl_version if ensembl_version else "current_fasta"
     url = "ftp://ftp.ensembl.org/pub/%s/%s/dna/*.dna.chromosome.%s.fa.gz" % (release, species, chrom)
     download_and_unpack(url, fd)
 
