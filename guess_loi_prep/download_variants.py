@@ -29,14 +29,14 @@ def download_variants(species, ensembl_version, chromosomes, directory=None):
 
 
 def download_global_variants(species, ensembl_version=None, directory=None):
-    release = "release-%s/gtf" % ensembl_version if ensembl_version else "current_variation"
+    release = "release-%s/variation" % ensembl_version if ensembl_version else "current_variation"
     directory = directory if directory else '.'
     url = "ftp://ftp.ensembl.org/pub/%s/vcf/%s/%s.vcf.gz" % (release, species, species)
     download(url, join(directory, 'global.vcf.gz'))
 
 
 def download_chromosome_variants(chrom, species, ensembl_version=None, directory=None):
-    release = "release-%s/gtf" % ensembl_version if ensembl_version else "current_variation"
+    release = "release-%s/variation" % ensembl_version if ensembl_version else "current_variation"
     directory = directory if directory else '.'
     url = "ftp://ftp.ensembl.org/pub/%s/vcf/%s/%s-chr%s.vcf.gz" % (release, species, species, chrom)
     download(url, join(directory, chrom + '.vcf.gz'))
