@@ -39,3 +39,16 @@ def check_file_exists(file):
         print("A file named '%s' is already present in the directory. Please remove manually to force re build" % file)
         return True
     return False
+
+
+def get_gatk_version():
+    "The Genome Analysis Toolkit (GATK) v4.1.4.0"
+    version_lines = check_output(['gatk', 'HaplotypeCaller', '--version'], stderr=STDOUT, universal_newlines=True)
+
+    raw_version = version_lines.split('\n')[0]
+    m = re.match(r'Version:(\d\.\d\.\d+\.\d+)', raw_version)
+    if m is None:
+        m = re.match(r'.+\(GATK\) v(\d\.\d\.\d+\.\d+)', raw_version)
+    version = m.group(1)
+
+    return version

@@ -49,3 +49,22 @@ def read_geneimprint_annotation(fd):
         if len(tokens) != 5:
             exit("Gene Imprint: Malformed input")
         yield tokens
+
+
+def create_gene2source_dict(imprint_annotation_file):
+    with open(imprint_annotation_file, 'r') as igenes:
+        dict = {}
+        for gene, source in read_map(igenes):
+            if gene not in dict:
+                dict[gene] = source
+            else:
+                exit('Duplicated key %s' % gene)
+        return dict
+
+
+def read_map(igenes):
+    for line in igenes:
+        tokens = line.rstrip('\n').split('\t')
+        if len(tokens) != 2:
+            exit("More than two columns found")
+        yield tokens

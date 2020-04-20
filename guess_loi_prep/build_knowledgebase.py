@@ -4,14 +4,15 @@ from os.path import join, exists
 from subprocess import check_call
 
 from guess_loi_prep.annotation import download_annotation
-from guess_loi_prep.create_geneimprint_annotation import create_geneimprint_annotation_dict
+from guess_loi_prep.create_geneimprint_annotation import create_gene2source_dict
 from guess_loi_prep.create_genetype_annotation import read_bed
 from guess_loi_prep.create_par_regions import create_par_regions
 from guess_loi_prep.download_genome import download_genome
 from guess_loi_prep.download_variants import download_variants
 from guess_loi_prep.filter_gtf import filter_gtf_by_genes
 from guess_loi_prep.filter_vcf import filter_chromosome_vcfs, filter_global_vcf
-from guess_loi_prep.general import read_chromosomes, species_name, check_file_exists, check_command_availability
+from guess_loi_prep.general import read_chromosomes, species_name, check_file_exists, check_command_availability, \
+    get_gatk_version
 from guess_loi_prep.hisat_index import create_hisat_index
 from guess_loi_prep.variant_selection import split_variants_to_files
 
@@ -20,6 +21,7 @@ def main():
     args = parse_args()
     chromosomes = read_chromosomes(args.chromosomes)
     gtf_gz = args.species + '.chr.gtf.gz'
+
     if not check_file_exists(gtf_gz):
         download_annotation(args.species, args.ensembl_version)
 
@@ -27,13 +29,15 @@ def main():
     if not check_file_exists(bed_file):
         filter_gtf_by_genes(args.imprinted_genes, gtf_gz, bed_file)
 
+    # TODO: check this for correct annotations
     bed_annotated = "genes-and-sex-regions.bed"
     if not check_file_exists(bed_annotated):
-        imprint_annotation_file = "gene_imprint.txt"
+        imprint_annotation_file = "igene_source_map.txt"
         if not exists(imprint_annotation_file):
             exit("Annotation file for imprinted genes not provided")
 
-        gene2info = create_geneimprint_annotation_dict(imprint_annotation_file)
+        # gene2info = create_geneimprint_annotation_dict(imprint_annotation_file)
+        gene2info = create_gene2source_dict(imprint_annotation_file)
         # gene2type = create_genetype_annotation_dict(bed_file)
         par_chroms = create_par_regions(args.species + "-par.bed")
         annotate_bed(bed_file, bed_annotated, gene2info, par_chroms)
@@ -91,7 +95,12 @@ def update_vcf_seq_dict(in_vcf, output, genome_dict):
 
 def gatk_index(vcf):
     check_command_availability(['gatk'])
-    check_call('gatk IndexFeatureFile -F ' + vcf, shell=True)
+    version = get_gatk_version()
+
+    if version <= '4.0.11.0':
+        check_call('gatk IndexFeatureFile -F ' + vcf, shell=True)
+    else:
+        check_call('gatk IndexFeatureFile -I ' + vcf, shell=True)
 
 
 def annotate_bed(bed_file, output, gene2info, par=None):
