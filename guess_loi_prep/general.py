@@ -4,7 +4,7 @@ from operator import itemgetter
 from os.path import exists
 from shutil import which
 from typing import List, Iterable
-from subprocess import check_output
+from subprocess import check_output, STDOUT
 
 
 def sort_by_columns(lines: Iterable[List], columns: List) -> List:

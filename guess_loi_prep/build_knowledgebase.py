@@ -73,8 +73,11 @@ def main():
         if not check_file_exists(i_bi_vcf) and not check_file_exists(i_multi_vcf):
             split_variants_to_files(variants_file, genome_file, i_bi_vcf, i_multi_vcf)
         update_vcf_seq_dict(i_bi_vcf, bi_vcf, genome_dict)
-        gatk_index(bi_vcf)
         update_vcf_seq_dict(i_multi_vcf, multi_vcf, genome_dict)
+
+    if not check_file_exists(bi_vcf + ".idx"):
+        gatk_index(bi_vcf)
+    if not check_file_exists(multi_vcf + ".idx"):
         gatk_index(multi_vcf)
 
     wdir = "hisat2-index"
